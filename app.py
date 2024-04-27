@@ -1,9 +1,12 @@
 import os
+from flask_cors import CORS
 from dotenv import load_dotenv
 from settings.config import app
 from settings import route
 
 load_dotenv()
+
+CORS(app, resources={r'/*': {'origins': '*'}})
 
 # Create user database
 with app.app_context():

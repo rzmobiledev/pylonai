@@ -1,8 +1,10 @@
+import re
 from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 from flask_restx import Api, fields
 from flask import request, jsonify, make_response
 from flask_restx import Resource
+from sqlalchemy.exc import IntegrityError
 
 from settings.config import app
 from settings.manpower_data import manpowerlist
@@ -10,8 +12,19 @@ from settings.hashing_pwd import password_hasher, check_password
 
 db = SQLAlchemy(app)
 endpoint_url = Blueprint('api', __name__, url_prefix='/api')
+authorizations = {
+    "Basic": {
+        "type": "basic",
+        "flow": "password",
+    },
+    "Bearer": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+    },
+}
 api = Api(endpoint_url, version='1.0', title='API Documentation',
-          description='PylonAI Manpowerlist API Docs.',
+          description='PylonAI Manpowerlist API Docs.', authorizations=authorizations
           )
 
 
@@ -34,13 +47,18 @@ user_field_model = api.model('User Fields', {
     'password': fields.String(description='Password', format='password', required=True)
 })
 
+user_login_field = api.model('User Login Fields', {
+    'username': fields.String(description='Username', required=True),
+    'password': fields.String(description='Password', format='password', required=True)
+})
+
 
 # hide password input in swagger
 class password(object):
     def __call__(self, value):
         return value
 
-    @property
+    @ property
     def __schema__(self):
         return {
             "type": "string",
@@ -49,11 +67,9 @@ class password(object):
 
 
 parser = api.parser()
-parser.add_argument(
-    'password',
-    type=password(),
-    location='form',
-)
+parser.add_argument('username', type=str, location='args', help='Username cannot be blank')
+parser.add_argument('email', type=str, location='args', help='Email cannot be blank')
+parser.add_argument('password', type=password(), location='args', help='Password cannot be empty')
 
 
 @app.route('/')
@@ -66,21 +82,35 @@ class UserRoute(Resource):
 
     @api.response(500, 'Internal error')
     @api.response(200, 'User created')
+    @api.header('content-type', 'application/json')
     @api.doc(model=user_field_model, params={'username': 'Username', 'email': 'Email', 'password': 'Password'})
     @api.expect(parser)
     def post(self):
         try:
-            data = request.get_json()
+
+            username = request.args.get("username")
+            email = request.args.get("email")
+            password = request.args.get("password")
+
+            if username:  # using swagger
+                data = dict(username=username, email=email, password=password)
+
+            else:  # using postman
+                data = request.get_json()
+
             hashed_password = password_hasher(data.get('password'))
             new_user = User(username=data.get('username'), email=data.get('email'), password=hashed_password)
             db.session.add(new_user)
             db.session.commit()
             return make_response(jsonify({"message": "user created"}), 200)
+        except IntegrityError:
+            return make_response(jsonify({"message": "Username or email is already exists."}), 500)
         except Exception as e:
             return make_response(jsonify({"message": str(e)}), 500)
 
     @api.response(500, 'Internal error')
     @api.response(200, 'Success')
+    @api.header('content-type', 'application/json')
     def get(self):
         try:
             users = User.query.all()
@@ -94,13 +124,20 @@ class LoginRoute(Resource):
 
     @api.response(500, 'Internal error')
     @api.response(200, 'Success')
+    @api.doc(model=user_login_field, params={'username': 'Username', 'password': 'Password'})
     @api.expect(parser)
-    @api.doc(model=user_field_model, params={'username': 'Username', 'password': 'Password'})
     def post(self):
         try:
-            data = request.get_json()
-            print(data)
-            user = User.query.filter_by(username=data.get('username')).first()
+            username = request.args.get("username")
+            password = request.args.get("password")
+
+            if username:  # using swagger
+                data = dict(username=username, email=email, password=password)
+
+            else:  # using postman
+                data = request.get_json()
+
+            user = User.query.filter_by(username=data.get('username')).filter_by(email=data.get('username')).first()
             if user:
                 return make_response(jsonify({"message": "You are loging in successfuly"}), 200)
             return make_response(jsonify({"message": "You are not authorized"}), 404)
@@ -148,9 +185,9 @@ class UserDetailRoute(Resource):
 
 
 @api.route('/manpower/')
-@api.doc(params={})
 class ManPowerListRoute(Resource):
-
+    @api.response(500, 'Internal error')
+    @api.response(200, 'Success')
     def get(self):
         try:
             data = manpowerlist()
