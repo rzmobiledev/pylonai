@@ -1,16 +1,14 @@
-import re
-from flask_sqlalchemy import SQLAlchemy
 from flask import Blueprint
 from flask_restx import Api, fields
 from flask import request, jsonify, make_response
 from flask_restx import Resource
 from sqlalchemy.exc import IntegrityError
 
-from settings.config import app
+from settings.config import app, db, User, UserQuery
 from settings.manpower_data import manpowerlist
-from settings.hashing_pwd import password_hasher, check_password
+from settings.hashing_pwd import password_hasher
 
-db = SQLAlchemy(app)
+
 endpoint_url = Blueprint('api', __name__, url_prefix='/api')
 authorizations = {
     "Basic": {
@@ -26,18 +24,6 @@ authorizations = {
 api = Api(endpoint_url, version='1.0', title='API Documentation',
           description='PylonAI Manpowerlist API Docs.', authorizations=authorizations
           )
-
-
-class User(db.Model):
-    __tablename__ = 'users'
-
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(150), unique=True, nullable=False)
-
-    def json(self):
-        return {"id": self.id, "username": self.username, "email": self.email}
 
 
 # user field type in swagger
@@ -67,8 +53,6 @@ class password(object):
 
 
 parser = api.parser()
-parser.add_argument('username', type=str, location='args', help='Username cannot be blank')
-parser.add_argument('email', type=str, location='args', help='Email cannot be blank')
 parser.add_argument('password', type=password(), location='args', help='Password cannot be empty')
 
 
@@ -132,15 +116,15 @@ class LoginRoute(Resource):
             password = request.args.get("password")
 
             if username:  # using swagger
-                data = dict(username=username, email=email, password=password)
+                data = dict(username=username, password=password)
 
             else:  # using postman
                 data = request.get_json()
 
-            user = User.query.filter_by(username=data.get('username')).filter_by(email=data.get('username')).first()
-            if user:
-                return make_response(jsonify({"message": "You are loging in successfuly"}), 200)
-            return make_response(jsonify({"message": "You are not authorized"}), 404)
+            is_user_exists = UserQuery.is_user_exists(username=data.get('username'), email=data.get('email'))
+            if is_user_exists:
+                is_password_correct = UserQuery.is_password_correct(username, password)
+                return make_response(jsonify({"message": "You are loging in successfuly"}), 200) if is_password_correct else make_response(jsonify({"message": "You are not authorized"}), 404)
         except Exception as e:
             return make_response(jsonify({"message": str(e)}), 500)
 
