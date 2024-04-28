@@ -1,21 +1,24 @@
+from flask import jsonify, make_response
+from settings.api_con.connection import db
 import os
 from flask_cors import CORS
 from dotenv import load_dotenv
-from settings.config import app
-from settings import route
+from settings.config import create_app
 
 load_dotenv()
 
-CORS(app, resources={r'/*': {'origins': '*'}})
+
+@create_app().route("/")
+def index():
+    return make_response(jsonify({"message": "index route"}), 200)
+
+
+CORS(create_app(), resources={r'/*': {'origins': '*'}})
 
 # Create user database
-with app.app_context():
-    route.db.create_all(bind_key=None)
-
-
-# Register endpoint url as blueprint
-app.register_blueprint(route.endpoint_url)
+with create_app().app_context():
+    db.create_all(bind_key=None)
 
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get('DEBUG'))
+    create_app().run(debug=os.environ.get('DEBUG'))
