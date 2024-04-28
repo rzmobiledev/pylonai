@@ -2,11 +2,10 @@ from flask_restx import fields, Resource, Namespace
 from flask import request, jsonify, make_response
 from sqlalchemy.exc import IntegrityError
 from .connection import db
-from settings.users import User, UserQuery, password_hasher
-from settings.manpower_data import manpowerlist
+from .users import User, UserQuery, password_hasher
+from .manpower_data import manpowerlist
 
-
-api = Namespace('Users', description='All user operations')
+api = Namespace('', description='All USERS')
 
 # user field type in swagger
 user_field_model = api.model(
@@ -90,11 +89,11 @@ class UserRoute(Resource):
             )
             db.session.add(new_user)
             db.session.commit()
-            return make_response(jsonify({"message": "user created"}), 200)
+            return make_response(jsonify({"message": "user created"}), 201)
         except IntegrityError:
             return make_response(
                 jsonify({"message": "Username or email is already exists."}),
-                500,
+                404,
             )
         except Exception as e:
             return make_response(jsonify({"message": str(e)}), 500)
@@ -108,9 +107,9 @@ class UserRoute(Resource):
             return make_response(
                 jsonify({"users": [user.json() for user in users]}), 200
             )
-        except Exception:
+        except Exception as e:
             return make_response(
-                jsonify({"message": "error getting users"}), 500
+                jsonify({"message": str(e)}), 500
             )
 
 

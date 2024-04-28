@@ -1,14 +1,12 @@
 import bcrypt
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.orm import DeclarativeBase
+from .connection import db
+
+from logger import logger
 
 
-class Base(DeclarativeBase):
-    pass
-
-
-class User(Base):
+class User(db.Model):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
     username: Mapped[str] = mapped_column(unique=True, nullable=False)
@@ -33,8 +31,10 @@ class UserQuery(object):
     def is_password_correct(username: str = None, passwd: str = None) -> bool:
 
         user = UserQuery.get_user_id_by_email_or_name(username=username)
-        db_passwd = user.password if user else None
-        db_passwd = bytes(db_passwd, 'utf-8')
+        hashed_password = user.password if user else None
+        if not hashed_password:
+            return False
+        db_passwd = bytes(hashed_password, 'utf-8')
         return check_password(passwd, db_passwd)
 
 
