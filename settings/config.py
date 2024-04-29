@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 from dotenv import load_dotenv
-from settings import blueprint_url
+from settings import blueprint_user, blueprint_employee
 from .api_con.connection import db
 
 load_dotenv()
@@ -14,5 +14,6 @@ def create_app():
     app.config["DEBUG"] = os.environ.get("DEBUG")
     app.config["TESTING"] = False
     db.init_app(app)
-    app.register_blueprint(blueprint_url)
+    app.register_blueprint(blueprint_user)
+    app.register_blueprint(blueprint_employee)
     return app

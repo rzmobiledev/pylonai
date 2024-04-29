@@ -3,7 +3,7 @@ import pyodbc
 from datetime import datetime
 
 
-class ManPowerData:
+class EmployeeFormat:
 
     def __init__(
         self,
@@ -69,13 +69,13 @@ def pylon_db_connection():
     return pyodbc.connect(pylon_driver)
 
 
-def manpowerlist() -> list:
+def employeeList() -> list:
     data = []
     conn = pylon_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM test.SampleManpowerList")
     data = [
-        ManPowerData(
+        EmployeeFormat(
             row[0],
             row[1],
             row[2],
@@ -96,14 +96,14 @@ def manpowerlist() -> list:
     return data
 
 
-def detail_manpower(nric4digit: str):
+def employee_detail(id: int):
     conn = pylon_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT * FROM test.SampleManPowerList WHERE nric4digit=?", nric4digit
+        "SELECT * FROM test.SampleManPowerList WHERE nric4digit=?", id
     )
     data = [
-        ManPowerData(
+        EmployeeFormat(
             row[0],
             row[1],
             row[2],
@@ -124,14 +124,14 @@ def detail_manpower(nric4digit: str):
     return data
 
 
-def update_manpower(
+def employee_update(
     designation: str,
     project: str,
     team: str,
     supervisor: str,
     joinDate: datetime,
     resignDate: datetime,
-    nric4Digit: str,
+    id: str,
 ):
     conn = pylon_db_connection()
     cursor = conn.cursor()
@@ -143,7 +143,7 @@ def update_manpower(
         supervisor,
         joinDate,
         resignDate,
-        nric4Digit,
+        id,
     )
     conn.commit()
     cursor.close()

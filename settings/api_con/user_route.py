@@ -1,14 +1,14 @@
-from datetime import datetime
+
 from flask_restx import fields, Resource, Namespace
 from flask import request, jsonify, make_response
 from sqlalchemy.exc import IntegrityError
 
 from .connection import db
 from .users import User, UserQuery, password_hasher
-from .manpower_data import manpowerlist, detail_manpower, update_manpower
+
 from settings.jwt_check import token_required, get_jwt_token
 
-api = Namespace("", description="All USERS")
+api = Namespace("user", description="USERS ENDPOINT")
 headers = {"Content-Type": "application/json"}
 
 # user field type in swagger
@@ -30,20 +30,6 @@ user_login_field = api.model(
         "password": fields.String(
             description="Password", format="password", required=True
         ),
-    },
-)
-
-manpower_fields = api.model(
-    "Manpower Fields",
-    {
-        "nric4Digit": fields.String(description="resignDate", required=True),
-        "designation": fields.String(description="designation", required=True),
-        "project": fields.String(description="project", required=True),
-        "team": fields.String(description="team", required=True),
-        "supervisor": fields.String(description="supervisor", required=True),
-        "joinDate": fields.String(description="joinDate", required=True),
-        "resignDate": fields.String(description="resignDate", required=True),
-        "resignDate": fields.String(description="resignDate", required=True),
     },
 )
 
@@ -218,97 +204,3 @@ class UserDetailRoute(Resource):
             return make_response(
                 jsonify({"message": "error deleting user"}), 500
             )
-
-
-@api.route("/manpower/")
-class ManPowerListRoute(Resource):
-    @api.response(500, "Internal error")
-    @api.response(200, "Success")
-    def get(self):
-        try:
-            data = manpowerlist()
-            return make_response(jsonify({"data": data}))
-        except Exception:
-            return make_response(
-                jsonify({"message": "Cannot retrieve manpowerlist data"}), 500
-            )
-
-
-@api.route("/manpower/<int:id>")
-@api.doc(params={"id": "nric4digit"})
-class ManPowerDetailRoute(Resource):
-    @api.response(500, "Internal error")
-    @api.response(200, "Success")
-    def get(self, id):
-        try:
-            data = detail_manpower(id)
-            return make_response(jsonify({"data": data}))
-        except Exception:
-            return make_response(jsonify({"message": "Data not found"}), 404)
-
-    @api.response(500, "Internal error")
-    @api.response(200, "Success")
-    @api.doc(
-        model=user_field_model,
-        params={
-            "designation": "designation",
-            "project": "project",
-            "team": "team",
-            "supervisor": "supervisor",
-            "joinDate": "joinDate",
-            "resignDate": "resignDate",
-        },
-    )
-    def put(self, id):
-        try:
-            designation = request.args.get("designation")
-            project = request.args.get("project")
-            team = request.args.get("team")
-            supervisor = request.args.get("supervisor")
-            joinDate = request.args.get("joinDate")
-            resignDate = request.args.get("resignDate")
-
-            if (
-                designation and project and team and supervisor and joinDate
-            ):  # using swagger
-                data = dict(
-                    designation=designation,
-                    project=project,
-                    team=team,
-                    supervisor=supervisor,
-                    joinDate=datetime.strptime(joinDate, "%Y-%m-%d"),
-                    resignDate=(
-                        datetime.strptime(resignDate, "%Y-%m-%d")
-                        if resignDate
-                        else None
-                    ),
-                )
-
-            else:  # using postman. need to change string date to python date
-                data = request.get_json()
-                joindate = datetime.strptime(data.get("joinDate"), "%Y-%m-%d")
-                resigndate = (
-                    datetime.strptime(data.get("resignDate"), "%Y-%m-%d")
-                    if data.get("resignDate")
-                    else None
-                )
-                data["joinDate"] = joindate
-                data["resignDate"] = resigndate
-
-            update_manpower(
-                data.get("designation"),
-                data.get("project"),
-                data.get("team"),
-                data.get("supervisor"),
-                data.get("joinDate"),
-                data.get("resignDate"),
-                id,
-            )
-            return make_response(
-                jsonify({"data": f"Employee's IC Number {id} updated."})
-            )
-        except Exception as e:
-            return make_response(jsonify({"message": str(e)}), 500)
-            # return make_response(
-            #     jsonify({"message": "Cannot update manpowerlist data"}), 500
-            # )
