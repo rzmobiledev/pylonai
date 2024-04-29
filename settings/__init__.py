@@ -1,6 +1,7 @@
 from flask_restx import Api
 from flask import Blueprint
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from .api_con import api as ns  # noqa

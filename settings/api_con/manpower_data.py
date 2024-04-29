@@ -1,5 +1,6 @@
 import os
 import pyodbc
+from datetime import datetime
 
 
 class ManPowerData:
@@ -7,7 +8,7 @@ class ManPowerData:
     def __init__(
         self,
         id: int,
-        nric4digit: int,
+        nric4Digit: int,
         name: str,
         manpowerid: str,
         designation: str,
@@ -16,11 +17,11 @@ class ManPowerData:
         project: str,
         team: str,
         supervisor: str,
-        joindate: str,
-        resigndate: str,
+        joinDate: str,
+        resignDate: str,
     ) -> None:
         self.id = id
-        self.nric4digit = nric4digit
+        self.nric4Digit = nric4Digit
         self.name = name
         self.manpowerid = manpowerid
         self.designation = designation
@@ -29,13 +30,13 @@ class ManPowerData:
         self.project = project
         self.team = team
         self.supervisor = supervisor
-        self.joindate = joindate
-        self.resigndate = resigndate
+        self.joinDate = joinDate
+        self.resignDate = resignDate
 
     def json(self) -> dict:
         return {
             "id": self.id,
-            "nric4digit": self.nric4digit,
+            "nric4Digit": self.nric4Digit,
             "name": self.name,
             "manpowerid": self.manpowerid,
             "designation": self.designation,
@@ -44,8 +45,8 @@ class ManPowerData:
             "project": self.project,
             "team": self.team,
             "supervisor": self.supervisor,
-            "joindate": self.joindate,
-            "resigndate": self.resigndate,
+            "joinDate": self.joinDate,
+            "resignDate": self.resignDate,
         }
 
 
@@ -90,5 +91,60 @@ def manpowerlist() -> list:
         ).json()
         for row in cursor.fetchall()
     ]
+    cursor.close()
     conn.close()
     return data
+
+
+def detail_manpower(nric4digit: str):
+    conn = pylon_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT * FROM test.SampleManPowerList WHERE nric4digit=?", nric4digit
+    )
+    data = [
+        ManPowerData(
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            row[6],
+            row[7],
+            row[8],
+            row[9],
+            row[10],
+            row[11],
+        ).json()
+        for row in cursor.fetchall()
+    ][0]
+    cursor.close()
+    conn.close()
+    return data
+
+
+def update_manpower(
+    designation: str,
+    project: str,
+    team: str,
+    supervisor: str,
+    joinDate: datetime,
+    resignDate: datetime,
+    nric4Digit: str,
+):
+    conn = pylon_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE test.SampleManPowerList SET designation = ?, project = ?, team = ?, supervisor = ?, joinDate = ?, resignDate = ? WHERE nric4Digit = ?",
+        designation,
+        project,
+        team,
+        supervisor,
+        joinDate,
+        resignDate,
+        nric4Digit,
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
