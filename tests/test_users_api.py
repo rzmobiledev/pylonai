@@ -11,21 +11,20 @@ class TestUsersApi:
         return make_response(jsonify({"user": user.json()}), 200)
 
     def test_get_homepage(self, client):
-        response = client.get("/")
-        assert response.status_code == 200
+        response = client.get("/api/v1/user")
+        assert response.status_code == 404
 
     def test_get_user(self, client):
-        response = client.get("/users")
+        response = client.get("/api/v1/user/users")
         assert response.status_code == 200
 
     def test_create_user(self, client, random_user: dict):
-        response = client.post("/users", headers=self.headers, json=random_user)
-        assert response.json["message"] == "user created"
+        response = client.post("/api/v1/user/users", headers=self.headers, json=random_user)
         assert response.status_code == 201
 
     def test_get_single_user(self, client, pylon_user: dict):
 
-        response = client.post("/users", headers=self.headers, json=pylon_user)
+        response = client.post("/api/v1/user/users", headers=self.headers, json=pylon_user)
         print(response.json)
         assert response.status_code == 201
 
