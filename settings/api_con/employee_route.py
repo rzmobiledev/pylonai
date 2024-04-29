@@ -1,5 +1,9 @@
+from fileinput import filename
 from flask_restx import fields, Resource, Namespace
 from flask import request, jsonify, make_response
+import csv
+from pathlib import Path
+import os
 from datetime import datetime
 from .employee_format import employeeList, employee_detail, employee_update
 
@@ -14,12 +18,12 @@ manpower_fields = api.model(
         "team": fields.String(description="team", required=True),
         "supervisor": fields.String(description="supervisor", required=True),
         "joinDate": fields.String(description="joinDate", required=True),
-        "resignDate": fields.String(description="resignDate", required=True)
+        "resignDate": fields.String(description="resignDate", required=True),
     },
 )
 
 
-@api.route("/")
+@api.route("")
 class ManPowerListRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
@@ -29,7 +33,7 @@ class ManPowerListRoute(Resource):
             return make_response(jsonify({"data": data}))
         except Exception:
             return make_response(
-                jsonify({"message": "Cannot retrieve manpowerlist data"}), 500
+                jsonify({"message": "Cannot retrieve employee data"}), 500
             )
 
 
@@ -103,23 +107,46 @@ class ManPowerDetailRoute(Resource):
                 data.get("resignDate"),
                 id,
             )
-            return make_response(
-                jsonify({"data": "Employee's data updated."})
-            )
+            return make_response(jsonify({"data": "Employee's data updated."}))
         except Exception:
             return make_response(
                 jsonify({"message": "Cannot update employee."}), 500
             )
 
 
-# @api.route("/manpower/<int:id>")
-# @api.doc(params={"id": "id"})
-# class EmployeeCSV(Resource):
-#     @api.response(500, "Internal error")
-#     @api.response(200, "Success")
-#     def get(self, id):
-#         try:
-#             data = employee_detail(id)
-#             return make_response(jsonify({"data": data}))
-#         except Exception:
-#             return make_response(jsonify({"message": "Data not found"}), 404)
+@api.route("/csv")
+class EmployeeCSV(Resource):
+    @api.response(500, "Internal error")
+    @api.response(200, "Success")
+    def get(self):
+        try:
+            data = employeeList()
+            create_csv(data)
+            return make_response(
+                jsonify({"data": "Employee data exported succesfuly."})
+            )
+        except Exception as e:
+            return make_response(jsonify({"message": str(e)}), 500)
+            # return make_response(
+            #     jsonify({"message": "Cannot create employee report."}), 500
+            # )
+
+
+def create_csv(employeeList: list[dict]):
+
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+    report_folder = "report"
+    employee_csv = "employee.csv"
+
+    file_path = os.path.join(BASE_DIR, report_folder)
+    if not os.path.exists(file_path):
+        os.mkdir(file_path)
+
+    with open(f"{file_path}/{employee_csv}", "a") as f:
+        w = csv.writer(f)
+        """
+        write csv header column
+        """
+        w.writerow(head for head in employeeList[0].keys())
+        for employee in employeeList:
+            w.writerow(row for row in employee.values())

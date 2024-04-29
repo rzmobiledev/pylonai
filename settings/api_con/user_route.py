@@ -1,4 +1,3 @@
-
 from flask_restx import fields, Resource, Namespace
 from flask import request, jsonify, make_response
 from sqlalchemy.exc import IntegrityError

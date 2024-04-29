@@ -17,8 +17,8 @@ password = "p1l0n41b4ck3nd"
 @pytest.fixture
 def app():
     app = create_app()
-    app.config['TESTING'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('PGDATABASE_TEST')
+    app.config["TESTING"] = True
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("PGDATABASE_TEST")
     with app.app_context():
         db.create_all()
         yield app
@@ -34,18 +34,18 @@ def client(app):
 @pytest.fixture
 def random_user():
     return {
-        'username': fake.name(),
-        'email': fake.email(),
-        'password': hashing_password()
+        "username": fake.name(),
+        "email": fake.email(),
+        "password": hashing_password(),
     }
 
 
 @pytest.fixture
 def pylon_user():
     return {
-        'username': 'pylon',
-        'email': 'pylon@example.com',
-        'password': 'pyl0n123'
+        "username": "pylon",
+        "email": "pylon@example.com",
+        "password": "pyl0n123",
     }
 
 

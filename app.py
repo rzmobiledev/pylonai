@@ -1,4 +1,3 @@
-
 from settings.api_con import db
 import os
 from flask_cors import CORS
@@ -8,7 +7,7 @@ from settings.config import create_app
 load_dotenv()
 
 
-CORS(create_app(), resources={r'/*': {'origins': '*'}})
+CORS(create_app(), resources={r"/*": {"origins": "*"}})
 
 # Create user database
 with create_app().app_context():
@@ -16,4 +15,4 @@ with create_app().app_context():
 
 
 if __name__ == "__main__":
-    create_app().run(debug=os.environ.get('DEBUG'))
+    create_app().run(debug=os.environ.get("DEBUG"))
