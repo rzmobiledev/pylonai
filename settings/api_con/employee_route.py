@@ -1,11 +1,10 @@
-from fileinput import filename
 from flask_restx import fields, Resource, Namespace
 from flask import request, jsonify, make_response
 import csv
 from pathlib import Path
 import os
 from datetime import datetime
-from .employee_format import employeeList, employee_detail, employee_update
+from .employee import employeeList, employee_detail, employee_update
 
 api = Namespace("employee", description="EMPLOYEE ENDPOINT")
 
@@ -24,7 +23,7 @@ manpower_fields = api.model(
 
 
 @api.route("")
-class ManPowerListRoute(Resource):
+class EmployeeListRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
     def get(self):
@@ -39,7 +38,7 @@ class ManPowerListRoute(Resource):
 
 @api.route("/<int:id>")
 @api.doc(params={"id": "id"})
-class ManPowerDetailRoute(Resource):
+class EmployeeDetailRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
     def get(self, id):
@@ -62,7 +61,7 @@ class ManPowerDetailRoute(Resource):
             "resignDate": "resignDate",
         },
     )
-    def put(self, id):
+    def patch(self, id):
         try:
             designation = request.args.get("designation")
             project = request.args.get("project")
@@ -120,8 +119,8 @@ class EmployeeCSV(Resource):
     @api.response(200, "Success")
     def get(self):
         try:
-            data = employeeList()
-            create_csv(data)
+            payload = employeeList()
+            create_csv(payload)
             return make_response(
                 jsonify({"data": "Employee data exported succesfuly."})
             )

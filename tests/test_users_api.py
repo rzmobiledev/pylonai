@@ -19,12 +19,16 @@ class TestUsersApi:
         assert response.status_code == 200
 
     def test_create_user(self, client, random_user: dict):
-        response = client.post("/api/v1/user/users", headers=self.headers, json=random_user)
+        response = client.post(
+            "/api/v1/user/users", headers=self.headers, json=random_user
+        )
         assert response.status_code == 201
 
     def test_get_single_user(self, client, pylon_user: dict):
 
-        response = client.post("/api/v1/user/users", headers=self.headers, json=pylon_user)
+        response = client.post(
+            "/api/v1/user/users", headers=self.headers, json=pylon_user
+        )
         print(response.json)
         assert response.status_code == 201
 

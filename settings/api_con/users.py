@@ -5,8 +5,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 from .connection import db
 
-from logger import logger
-
 
 class User(db.Model):
     __tablename__ = "users"
@@ -51,6 +49,21 @@ class UserQuery(object):
             return False
         db_passwd = bytes(hashed_password, "utf-8")
         return check_password(passwd, db_passwd)
+
+    @staticmethod
+    def format_user_with_hashed_password(**kwargs) -> User | str:
+        if not kwargs.get("username") and not kwargs.get("email"):
+            hashed_password = password_hasher(kwargs.get("password"))
+            return hashed_password.decode("utf-8")
+
+        hashed_password = password_hasher(kwargs.get("password"))
+        hashed_pass_to_str = hashed_password.decode("utf-8")
+        user = User(
+            username=kwargs.get("username"),
+            email=kwargs.get("email"),
+            password=hashed_pass_to_str,
+        )
+        return user
 
 
 def password_hasher(password: str) -> bytes:

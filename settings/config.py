@@ -1,7 +1,7 @@
 import os
 from flask import Flask, jsonify, make_response
 from dotenv import load_dotenv
-from settings import (blueprint_user, blueprint_employee, blueprint_index)
+from settings import blueprint_user, blueprint_employee, blueprint_index
 from .api_con.connection import db
 
 load_dotenv()

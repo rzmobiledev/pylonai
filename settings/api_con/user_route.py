@@ -1,11 +1,11 @@
 from flask_restx import fields, Resource, Namespace
-from flask import request, jsonify, make_response
+from flask import request, Request, jsonify, make_response
 from sqlalchemy.exc import IntegrityError
 
 from .connection import db
 from .users import User, UserQuery, password_hasher
 
-from settings.jwt_check import token_required, get_jwt_token
+from settings.jwt_token import token_required, get_jwt_token
 
 api = Namespace("user", description="USERS ENDPOINT")
 headers = {"Content-Type": "application/json"}
@@ -58,7 +58,7 @@ parser.add_argument(
 @api.route("/protected")
 class ProtectedRoute(Resource):
     @token_required
-    def get(self):
+    def get(self, *args, **kwargs):
         return make_response(
             jsonify(message="You are authorized to see this page"), 200
         )
@@ -79,26 +79,11 @@ class UserRoute(Resource):
         },
     )
     @api.expect(parser)
-    def post(self):
+    def post(self, *args, **kwargs):
         try:
 
-            username = request.args.get("username")
-            email = request.args.get("email")
-            password = request.args.get("password")
-
-            if username:  # using swagger
-                data = dict(username=username, email=email, password=password)
-
-            else:  # using postman
-                data = request.get_json()
-
-            hashed_password = password_hasher(data.get("password"))
-            hashed_pass_to_str = hashed_password.decode("utf-8")
-            new_user = User(
-                username=data.get("username"),
-                email=data.get("email"),
-                password=hashed_pass_to_str,
-            )
+            data = get_request_username_dict(request)
+            new_user = UserQuery.format_user_with_hashed_password(data)
             db.session.add(new_user)
             db.session.commit()
             return make_response(jsonify({"message": "user created"}), 201)
@@ -128,6 +113,7 @@ class LoginRoute(Resource):
 
     @api.response(500, "Internal error")
     @api.response(200, "Success")
+    @api.header("content-type", "application/json")
     @api.doc(
         model=user_login_field,
         params={"username": "Username", "password": "Password"},
@@ -135,15 +121,7 @@ class LoginRoute(Resource):
     @api.expect(parser)
     def post(self):
         try:
-            username = request.args.get("username")
-            password = request.args.get("password")
-
-            if username:  # using swagger
-                data = dict(username=username, password=password)
-
-            else:  # using postman
-                data = request.get_json()
-
+            data = get_request_username_dict(request)
             is_user_exists = UserQuery.is_user_exists(
                 username=data.get("username"), email=data.get("email")
             )
@@ -175,14 +153,23 @@ class UserDetailRoute(Resource):
                 jsonify({"message": "error getting user"}), 500
             )
 
-    # update user
-    def put(self, id):
+    @api.response(500, "Internal error")
+    @api.response(200, "Success")
+    @api.doc(
+        model=user_field_model,
+        params={
+            "password": "Password",
+        },
+    )
+    def patch(self, id):
         try:
-            data = request.get_json()
+            data = get_request_username_dict(request)
             user = User.query.filter_by(id=id).first()
             if user:
-                user.username = data["username"]
-                user.email = data["email"]
+                hashed_password = UserQuery.format_user_with_hashed_password(
+                    **data
+                )
+                user.password = hashed_password
                 db.session.commit()
                 return make_response(jsonify({"message": "user updated"}), 200)
             return make_response(jsonify({"message": "user not found"}), 404)
@@ -195,7 +182,7 @@ class UserDetailRoute(Resource):
         try:
             user = User.query.filter_by(id=id).first()
             if user:
-                db.session.delete()
+                db.session.delete(user)
                 db.session.commit()
                 return make_response(jsonify({"message": "user deleted"}), 200)
             return make_response(jsonify({"message": "user not found"}), 404)
@@ -203,3 +190,17 @@ class UserDetailRoute(Resource):
             return make_response(
                 jsonify({"message": "error deleting user"}), 500
             )
+
+
+def get_request_username_dict(request: Request) -> dict:
+    username = request.args.get("username")
+    email = request.args.get("email")
+    password = request.args.get("password")
+
+    if username and email:  # using swagger
+        payload = dict(username=username, email=email, password=password)
+
+    else:  # using postman
+        payload = request.get_json()
+
+    return payload
