@@ -1,11 +1,16 @@
 from flask_restx import fields, Resource, Namespace
 from flask import request, jsonify, make_response
 from sqlalchemy.exc import IntegrityError
+
 from .connection import db
 from .users import User, UserQuery, password_hasher
 from .manpower_data import manpowerlist
+from settings.jwt_check import token_required, get_jwt_token
 
-api = Namespace('', description='All USERS')
+api = Namespace("", description="All USERS")
+headers = {
+    "Content-Type": "application/json"
+}
 
 # user field type in swagger
 user_field_model = api.model(
@@ -50,6 +55,13 @@ parser.add_argument(
     location="args",
     help="Password cannot be empty",
 )
+
+
+@api.route("/protected")
+class ProtectedRoute(Resource):
+    @token_required
+    def get(self):
+        return make_response(jsonify(message="You are authorized to see this page"), 200)
 
 
 @api.route("/users")
@@ -108,9 +120,7 @@ class UserRoute(Resource):
                 jsonify({"users": [user.json() for user in users]}), 200
             )
         except Exception as e:
-            return make_response(
-                jsonify({"message": str(e)}), 500
-            )
+            return make_response(jsonify({"message": str(e)}), 500)
 
 
 @api.route("/login")
@@ -141,9 +151,8 @@ class LoginRoute(Resource):
                 data.get("username"), data.get("password")
             )
             if is_user_exists and is_password_correct:
-                return make_response(
-                    jsonify({"message": "You are loging in successfuly"}), 200
-                )
+                token = get_jwt_token(data.get('username'))
+                return make_response(jsonify({'token': token}), 201)
             return make_response(
                 jsonify({"message": "You are not authorized"}), 404
             )

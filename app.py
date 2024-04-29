@@ -1,5 +1,5 @@
 
-from settings.api_con.connection import db
+from settings.api_con import db
 import os
 from flask_cors import CORS
 from dotenv import load_dotenv

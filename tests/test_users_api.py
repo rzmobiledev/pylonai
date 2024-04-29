@@ -4,15 +4,11 @@ from settings.api_con.users import User
 
 class TestUsersApi:
 
-    headers = {
-        'Content-Type': 'application/json'
-    }
+    headers = {"Content-Type": "application/json"}
 
     def get_user_by_email(self, email: str):
         user = User.query.filter_by(email=email).first()
-        return make_response(
-            jsonify({"user": user.json()}), 200
-        )
+        return make_response(jsonify({"user": user.json()}), 200)
 
     def test_get_homepage(self, client):
         response = client.get("/")
@@ -23,16 +19,15 @@ class TestUsersApi:
         assert response.status_code == 200
 
     def test_create_user(self, client, random_user: dict):
-        response = client.post('/users', headers=self.headers, json=random_user)
-        assert response.json['message'] == "user created"
+        response = client.post("/users", headers=self.headers, json=random_user)
+        assert response.json["message"] == "user created"
         assert response.status_code == 201
 
-    # def test_get_single_user(self, client, pylon_user: dict, database):
+    def test_get_single_user(self, client, pylon_user: dict):
 
-    #     response = client.post('/users', headers=self.headers, json=pylon_user)
-    #     print(response.json)
-    #     assert response.status_code == 201
+        response = client.post("/users", headers=self.headers, json=pylon_user)
+        print(response.json)
+        assert response.status_code == 201
 
-        # user = self.get_user_by_email(random_user.get('email'))
-        # print(user.json)
-        # assert user
+        user = self.get_user_by_email(pylon_user.get("email"))
+        user.json["user"].get("email") == pylon_user.get("email")

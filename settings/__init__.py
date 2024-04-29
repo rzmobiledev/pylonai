@@ -1,25 +1,14 @@
-from flask import jsonify, make_response
 from flask_restx import Api
 from flask import Blueprint
 from dotenv import load_dotenv
-from .api_con.route import api as ns  # noqa
-
 load_dotenv()
+
+from .api_con import api as ns  # noqa
 
 
 blueprint_url = Blueprint("api", __name__, url_prefix="/")
 
-
-@blueprint_url.route("/")
-def index():
-    return make_response(jsonify({"message": "index route"}), 200)
-
-
 authorizations = {
-    "Basic": {
-        "type": "basic",
-        "flow": "password",
-    },
     "Bearer": {
         "type": "apiKey",
         "in": "header",
@@ -33,6 +22,7 @@ api = Api(
     version="1.0",
     title="API Documentation",
     description="PylonAI Manpowerlist API Docs.",
+    security="Bearer Auth",
     authorizations=authorizations,
 )
 
