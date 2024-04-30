@@ -4,7 +4,13 @@ import csv
 from pathlib import Path
 import os
 from datetime import datetime
-from .employee import employeeList, employee_detail, employee_update
+from .employee import (
+    employeeList,
+    employee_detail,
+    employee_update,
+    check_employee_id,
+)
+from settings.jwt_token import token_required
 
 api = Namespace("employee", description="EMPLOYEE ENDPOINT")
 
@@ -26,7 +32,8 @@ employee_fields = api.model(
 class EmployeeListRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
-    def get(self):
+    @token_required
+    def get(self, *args, **kwargs):
         try:
             data = employeeList()
             return make_response(jsonify({"data": data}))
@@ -41,9 +48,10 @@ class EmployeeListRoute(Resource):
 class EmployeeDetailRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
-    def get(self, id):
+    def get(self, *args, **kwargs):
         try:
-            data = employee_detail(id)
+            employee_id = kwargs.get("id")
+            data = employee_detail(employee_id)
             return make_response(jsonify({"data": data}))
         except Exception:
             return make_response(jsonify({"message": "Data not found"}), 404)
@@ -61,8 +69,10 @@ class EmployeeDetailRoute(Resource):
             "resignDate": "resignDate",
         },
     )
-    def patch(self, id):
+    @token_required
+    def patch(self, *args, **kwargs):
         try:
+            employee_id = kwargs.get("id")
             designation = request.args.get("designation")
             project = request.args.get("project")
             team = request.args.get("team")
@@ -98,7 +108,10 @@ class EmployeeDetailRoute(Resource):
                 data["resignDate"] = resigndate
 
             # check if id exist in database
-            employee_exists = employee_detail(id)
+            employee_exists = check_employee_id(employee_id)
+            from logger.logger import log
+
+            log(data)
             if employee_exists:
                 employee_update(
                     data.get("designation"),
@@ -107,7 +120,7 @@ class EmployeeDetailRoute(Resource):
                     data.get("supervisor"),
                     data.get("joinDate"),
                     data.get("resignDate"),
-                    id,
+                    employee_id,
                 )
                 return make_response(
                     jsonify({"data": "Employee's data updated."})
@@ -122,7 +135,8 @@ class EmployeeDetailRoute(Resource):
 class EmployeeCSV(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
-    def get(self):
+    @token_required
+    def get(self, *args, **kwargs):
         try:
             payload = employeeList()
             create_csv(payload)

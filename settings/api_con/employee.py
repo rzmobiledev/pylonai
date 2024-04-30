@@ -122,6 +122,16 @@ def employee_detail(id: int):
     return data
 
 
+def check_employee_id(id: int):
+    conn = pylon_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM test.SampleManPowerList WHERE id=?", id)
+    data = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return data
+
+
 def employee_update(
     designation: str,
     project: str,

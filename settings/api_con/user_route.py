@@ -201,7 +201,7 @@ class UserDetailRoute(Resource):
                     ),
                     401,
                 )
-            
+
             user = User.query.filter_by(id=id_in_params).first()
             if user:
                 db.session.delete(user)
