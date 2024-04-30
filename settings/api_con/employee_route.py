@@ -36,7 +36,7 @@ class EmployeeListRoute(Resource):
     def get(self, *args, **kwargs):
         try:
             data = employeeList()
-            return make_response(jsonify({"data": data}))
+            return make_response(jsonify({"data": data}), 200)
         except Exception:
             return make_response(
                 jsonify({"message": "Cannot retrieve employee data"}), 500
@@ -52,7 +52,7 @@ class EmployeeDetailRoute(Resource):
         try:
             employee_id = kwargs.get("id")
             data = employee_detail(employee_id)
-            return make_response(jsonify({"data": data}))
+            return make_response(jsonify({"data": data}), 200)
         except Exception:
             return make_response(jsonify({"message": "Data not found"}), 404)
 
@@ -141,7 +141,7 @@ class EmployeeCSV(Resource):
             payload = employeeList()
             create_csv(payload)
             return make_response(
-                jsonify({"data": "Employee data exported succesfuly."})
+                jsonify({"data": "Employee data exported succesfuly."}), 200
             )
 
         except Exception:

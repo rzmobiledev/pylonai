@@ -9,9 +9,9 @@ This project is developed with python Flask, Postgresql and MicrosoftSQLServer a
 
 * **Python:** Please install python in your machine. Minimum requirements is Python version 3.10.5. This project uses 3.10.5 version
 * **Docker:** Install Docker and docker compose.
-* **Learn Once, Write Anywhere:** We don't make assumptions about the rest of your technology stack, so you can develop new features in React without rewriting existing code. React can also render on the server using Node and power mobile apps using [React Native](https://reactnative.dev/).
 
-[Learn how to use the API endpoint of this project](https://react.dev/learn).
+
+[Learn how to use the API endpoint of this project](https://docs.google.com/document/d/1qYs2OMMuiWzwoAqYRlNkA4GXBQ0YQbc6y2ht4FKn_p0/edit).
 
 ## Installation
 * **pyenv**. Pyenv lets you easily switch between multiple versions of Python. It's simple, unobtrusive, and follows the UNIX tradition of single-purpose tools that do one thing well. [Installation instruction](https://github.com/pyenv/pyenv)
