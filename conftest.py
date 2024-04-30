@@ -6,11 +6,12 @@ from settings.config import create_app
 from settings.api_con.users import User, password_hasher
 import os
 from dotenv import load_dotenv
+import jwt
 
 load_dotenv()
 
 fake = Faker()
-
+secret_key = os.environ.get("JWT_SECRET_KEY")
 password = "p1l0n41b4ck3nd"
 
 
@@ -65,3 +66,23 @@ def user():
     return make_response(
         jsonify({"users": [user.json() for user in users]}), 200
     )
+
+
+@pytest.fixture
+def get_token():
+    encoded_jwt = jwt.encode(
+        {"username": "pylon"}, secret_key, algorithm="HS256"
+    )
+    return encoded_jwt
+
+
+@pytest.fixture
+def employee_payload():
+    return {
+        "designation": "VIP Workers",
+        "project": "pylonAI",
+        "team": "backend",
+        "supervisor": "supervison12",
+        "joinDate": "2024-04-09",
+        "resignDate": "2025-04-09",
+    }

@@ -109,9 +109,6 @@ class EmployeeDetailRoute(Resource):
 
             # check if id exist in database
             employee_exists = check_employee_id(employee_id)
-            from logger.logger import log
-
-            log(data)
             if employee_exists:
                 employee_update(
                     data.get("designation"),
@@ -123,8 +120,11 @@ class EmployeeDetailRoute(Resource):
                     employee_id,
                 )
                 return make_response(
-                    jsonify({"data": "Employee's data updated."})
+                    jsonify({"data": "Employee's data updated."}, 200)
                 )
+            return make_response(
+                jsonify({"data": "Employee's id not found."}), 404
+            )
         except Exception:
             return make_response(
                 jsonify({"message": "Cannot update employee."}), 500
