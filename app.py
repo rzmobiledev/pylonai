@@ -7,7 +7,15 @@ from settings.config import create_app
 load_dotenv()
 
 
-CORS(create_app(), resources={r"/*": {"origins": "*"}})
+CORS(
+    create_app(),
+    resources={r"/*": {"origins": "*"}},
+    allow_headers=[
+        ["Content-Type", "application/json"],
+        ["Content-Type", "text/plain"],
+        ["Accept", "application/json"],
+    ],
+)
 
 # Create user database
 with create_app().app_context():

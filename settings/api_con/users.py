@@ -1,8 +1,6 @@
 import bcrypt
-from sqlalchemy import String, DateTime
-from sqlalchemy.sql import func
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-from datetime import datetime
 from .connection import db
 
 
@@ -15,15 +13,6 @@ class User(db.Model):
 
     def json(self):
         return {"id": self.id, "username": self.username, "email": self.email}
-
-
-class TokenBlockList(db.Model):
-    __tablename__ = "tokenblocklist"
-    id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
-    jti: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
 
 
 class UserQuery(object):

@@ -16,11 +16,11 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
-
         # jwt is passed in the request header
         if "Authorization" in request.headers:
             token = request.headers.get("Authorization")
-            token = token.split("Bearer ")[1]
+            if "Bearer" in token:
+                token = token.split("Bearer ")[1]
 
         if not token:
             return make_response(

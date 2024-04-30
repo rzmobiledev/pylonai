@@ -3,7 +3,7 @@ from flask import request, Request, jsonify, make_response
 from sqlalchemy.exc import IntegrityError
 
 from .connection import db
-from .users import User, UserQuery, password_hasher
+from .users import User, UserQuery
 
 from settings.jwt_token import token_required, get_jwt_token
 
@@ -55,15 +55,6 @@ parser.add_argument(
 )
 
 
-@api.route("/protected")
-class ProtectedRoute(Resource):
-    @token_required
-    def get(self, *args, **kwargs):
-        return make_response(
-            jsonify(message="You are authorized to see this page"), 200
-        )
-
-
 @api.route("/users")
 class UserRoute(Resource):
 
@@ -81,9 +72,8 @@ class UserRoute(Resource):
     @api.expect(parser)
     def post(self, *args, **kwargs):
         try:
-
-            data = get_request_username_dict(request)
-            new_user = UserQuery.format_user_with_hashed_password(data)
+            data = get_request_user_dict(request)
+            new_user = UserQuery.format_user_with_hashed_password(**data)
             db.session.add(new_user)
             db.session.commit()
             return make_response(jsonify({"message": "user created"}), 201)
@@ -98,14 +88,17 @@ class UserRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
     @api.header("content-type", "application/json")
-    def get(self):
+    @token_required
+    def get(self, *args, **kwargs):
         try:
             users = User.query.all()
             return make_response(
                 jsonify({"users": [user.json() for user in users]}), 200
             )
-        except Exception as e:
-            return make_response(jsonify({"message": str(e)}), 500)
+        except Exception:
+            return make_response(
+                jsonify({"message": "Cannot retrieve user data."}), 500
+            )
 
 
 @api.route("/login")
@@ -121,7 +114,7 @@ class LoginRoute(Resource):
     @api.expect(parser)
     def post(self):
         try:
-            data = get_request_username_dict(request)
+            data = get_request_user_dict(request)
             is_user_exists = UserQuery.is_user_exists(
                 username=data.get("username"), email=data.get("email")
             )
@@ -139,12 +132,14 @@ class LoginRoute(Resource):
 
 
 @api.route("/users/<int:id>")
-@api.doc(params={"id": "User ID"})
+@api.doc(params={"id": "id"})
 class UserDetailRoute(Resource):
 
-    def get(self, id):
+    @token_required
+    def get(self, *args, **kwargs):
         try:
-            user = User.query.filter(id=id).first()
+            user_id = kwargs.get("id")
+            user = User.query.filter_by(id=user_id).first()
             if user:
                 return make_response(jsonify({"user": user.json()}), 200)
             return make_response(jsonify({"message": "user not found"}), 404)
@@ -155,32 +150,59 @@ class UserDetailRoute(Resource):
 
     @api.response(500, "Internal error")
     @api.response(200, "Success")
+    @api.header("content-type", "application/json")
     @api.doc(
         model=user_field_model,
         params={
             "password": "Password",
         },
     )
-    def patch(self, id):
+    @api.expect(parser)
+    @token_required
+    def patch(self, *args, **kwargs):
         try:
-            data = get_request_username_dict(request)
-            user = User.query.filter_by(id=id).first()
+            id_in_params = kwargs.get("id")
+            current_login_user_id = self.id
+
+            if current_login_user_id != id_in_params:
+                return make_response(
+                    jsonify(
+                        message="You are not authorized to perform the action."
+                    ),
+                    401,
+                )
+
+            password = get_request_user_dict(request)
+            user = User.query.filter_by(id=id_in_params).first()
             if user:
                 hashed_password = UserQuery.format_user_with_hashed_password(
-                    **data
+                    **password
                 )
                 user.password = hashed_password
                 db.session.commit()
-                return make_response(jsonify({"message": "user updated"}), 200)
+                return make_response(jsonify(message="user updated"), 200)
             return make_response(jsonify({"message": "user not found"}), 404)
+
         except Exception:
             return make_response(
                 jsonify({"message": "error updating user"}), 500
             )
 
-    def delete(self, id):
+    @token_required
+    def delete(self, *args, **kwargs):
         try:
-            user = User.query.filter_by(id=id).first()
+            id_in_params = kwargs.get("id")
+            current_login_user_id = self.id
+
+            if current_login_user_id != id_in_params:
+                return make_response(
+                    jsonify(
+                        message="You are not authorized to perform the action."
+                    ),
+                    401,
+                )
+            
+            user = User.query.filter_by(id=id_in_params).first()
             if user:
                 db.session.delete(user)
                 db.session.commit()
@@ -192,15 +214,14 @@ class UserDetailRoute(Resource):
             )
 
 
-def get_request_username_dict(request: Request) -> dict:
+def get_request_user_dict(request: Request) -> dict:
     username = request.args.get("username")
     email = request.args.get("email")
     password = request.args.get("password")
 
-    if username and email:  # using swagger
+    if username or password:  # using swagger
         payload = dict(username=username, email=email, password=password)
 
     else:  # using postman
         payload = request.get_json()
-
     return payload

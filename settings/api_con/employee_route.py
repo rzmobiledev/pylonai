@@ -8,8 +8,8 @@ from .employee import employeeList, employee_detail, employee_update
 
 api = Namespace("employee", description="EMPLOYEE ENDPOINT")
 
-manpower_fields = api.model(
-    "Manpower Fields",
+employee_fields = api.model(
+    "Employee Fields",
     {
         "nric4Digit": fields.String(description="resignDate", required=True),
         "designation": fields.String(description="designation", required=True),
@@ -51,7 +51,7 @@ class EmployeeDetailRoute(Resource):
     @api.response(500, "Internal error")
     @api.response(200, "Success")
     @api.doc(
-        model=manpower_fields,
+        model=employee_fields,
         params={
             "designation": "designation",
             "project": "project",
@@ -97,16 +97,21 @@ class EmployeeDetailRoute(Resource):
                 data["joinDate"] = joindate
                 data["resignDate"] = resigndate
 
-            employee_update(
-                data.get("designation"),
-                data.get("project"),
-                data.get("team"),
-                data.get("supervisor"),
-                data.get("joinDate"),
-                data.get("resignDate"),
-                id,
-            )
-            return make_response(jsonify({"data": "Employee's data updated."}))
+            # check if id exist in database
+            employee_exists = employee_detail(id)
+            if employee_exists:
+                employee_update(
+                    data.get("designation"),
+                    data.get("project"),
+                    data.get("team"),
+                    data.get("supervisor"),
+                    data.get("joinDate"),
+                    data.get("resignDate"),
+                    id,
+                )
+                return make_response(
+                    jsonify({"data": "Employee's data updated."})
+                )
         except Exception:
             return make_response(
                 jsonify({"message": "Cannot update employee."}), 500
@@ -124,11 +129,11 @@ class EmployeeCSV(Resource):
             return make_response(
                 jsonify({"data": "Employee data exported succesfuly."})
             )
-        except Exception as e:
-            return make_response(jsonify({"message": str(e)}), 500)
-            # return make_response(
-            #     jsonify({"message": "Cannot create employee report."}), 500
-            # )
+
+        except Exception:
+            return make_response(
+                jsonify({"message": "Cannot create employee report."}), 500
+            )
 
 
 def create_csv(employeeList: list[dict]):

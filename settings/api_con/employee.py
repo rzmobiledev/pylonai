@@ -99,9 +99,7 @@ def employeeList() -> list:
 def employee_detail(id: int):
     conn = pylon_db_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT * FROM test.SampleManPowerList WHERE nric4digit=?", id
-    )
+    cursor.execute("SELECT * FROM test.SampleManPowerList WHERE id=?", id)
     data = [
         EmployeeFormat(
             row[0],
@@ -136,7 +134,7 @@ def employee_update(
     conn = pylon_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "UPDATE test.SampleManPowerList SET designation = ?, project = ?, team = ?, supervisor = ?, joinDate = ?, resignDate = ? WHERE nric4Digit = ?",
+        "UPDATE test.SampleManPowerList SET designation = ?, project = ?, team = ?, supervisor = ?, joinDate = ?, resignDate = ? WHERE id = ?",
         designation,
         project,
         team,

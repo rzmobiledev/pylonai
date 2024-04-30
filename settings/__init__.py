@@ -14,19 +14,21 @@ blueprint_employee = Blueprint("employees", __name__, url_prefix="/api/v1")
 
 
 authorizations = {
-    "Bearer": {
+    "apiKey": {
         "type": "apiKey",
         "in": "header",
         "name": "Authorization",
     },
 }
 
+security = {"apiKey": []}
+
 api = Api(
     blueprint_employee,
     version="1.0",
     title="API Documentation",
     description="PylonAI Manpowerlist API Docs.",
-    security="Bearer Auth",
+    security=security,
     authorizations=authorizations,
 )
 
